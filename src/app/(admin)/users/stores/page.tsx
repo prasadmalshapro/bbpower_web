@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import React, { useEffect, useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { storeUsersApi, storesApi, usersApi } from "@/lib/api-client";
 import Button from "@/components/ui/button/Button";
 import { Modal } from "@/components/ui/modal";
@@ -9,10 +10,12 @@ import Label from "@/components/form/Label";
 import Select from "@/components/form/Select";
 import { useModal } from "@/hooks/useModal";
 
-export default function UserStoresPage() {
-  const params = useParams();
+function UserStoresContent() {
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const userId = parseInt(params.id as string);
+  const idParam = searchParams.get("id");
+  const userId = idParam ? parseInt(idParam, 10) : NaN;
+
   const [user, setUser] = useState<any>(null);
   const [stores, setStores] = useState<any[]>([]);
   const [userStores, setUserStores] = useState<any[]>([]);
@@ -24,10 +27,15 @@ export default function UserStoresPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    if (Number.isNaN(userId) || userId < 1) {
+      setLoading(false);
+      return;
+    }
     fetchData();
-  }, [userId]);
+  }, [userId, idParam]);
 
   const fetchData = async () => {
+    if (Number.isNaN(userId)) return;
     try {
       setLoading(true);
       const [userRes, storesRes, userStoresRes] = await Promise.all([
@@ -104,10 +112,22 @@ export default function UserStoresPage() {
     }
   };
 
-  // Get stores not yet mapped to this user
   const availableStores = stores.filter(
     (store) => !userStores.some((us) => us.id === store.id)
   );
+
+  if (Number.isNaN(userId) || userId < 1) {
+    return (
+      <div className="p-6">
+        <p className="text-gray-500 dark:text-gray-400 mb-4">
+          Invalid or missing user id. Open this page from the Users list (Stores link).
+        </p>
+        <Link href="/users" className="text-brand-500 hover:underline">
+          ← Back to Users
+        </Link>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -253,3 +273,10 @@ export default function UserStoresPage() {
   );
 }
 
+export default function UserStoresPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-8 text-gray-500">Loading...</div>}>
+      <UserStoresContent />
+    </Suspense>
+  );
+}

@@ -246,7 +246,7 @@ export default function UsersPage() {
                         Edit
                       </button>
                       <Link
-                        href={`/users/${user.id}/stores`}
+                        href={`/users/stores?id=${encodeURIComponent(user.id)}`}
                         className="text-blue-500 hover:text-blue-600"
                       >
                         Stores
