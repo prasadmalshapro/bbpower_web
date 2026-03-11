@@ -99,17 +99,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return { success: false, error: response.error };
       }
 
-      const responseData = response.data as { token?: string; user?: User } | undefined;
-      if (responseData?.token && responseData?.user) {
-        const { token: newToken, user: registeredUser } = responseData;
-        setToken(newToken);
-        setUser(registeredUser);
-        localStorage.setItem('token', newToken);
-        localStorage.setItem('user', JSON.stringify(registeredUser));
-        return { success: true };
-      }
-
-      return { success: false, error: 'Invalid response from server' };
+      // New registration flow: backend no longer returns token here.
+      // This method is kept for backward compatibility (admin flows, etc.).
+      return { success: true };
     } catch (error) {
       return {
         success: false,

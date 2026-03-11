@@ -10,7 +10,7 @@
   <rect x="9" y="19" width="14" height="10" rx="1.5" fill="#FFFFFF"/>
   <rect x="26" y="21" width="2.5" height="6" rx="1" fill="#3B82F6"/>
   
-  <!-- PowerBB Text -->
-  <text x="36" y="34" class="logo-text" font-size="24" fill="#1F2937">PowerBB</text>
+  <!-- BB Charge Text -->
+  <text x="36" y="34" class="logo-text" font-size="24" fill="#1F2937">BB Charge</text>
   <text x="36" y="44" class="logo-subtitle" font-size="10" fill="#6B7280">Power Bank Rental System</text>
 </svg>

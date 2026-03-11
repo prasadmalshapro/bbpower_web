@@ -9,8 +9,8 @@ import DemographicCard from "@/components/ecommerce/DemographicCard";
 
 export const metadata: Metadata = {
   title:
-    "Dashboard | PowerBB - Power Bank Rental System",
-  description: "PowerBB Dashboard - Power Bank Rental Management System",
+    "Dashboard | BB Charge - Power Bank Rental System",
+  description: "BB Charge Dashboard - Power Bank Rental Management System",
 };
 
 export default function Ecommerce() {

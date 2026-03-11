@@ -8,6 +8,8 @@ import Label from "@/components/form/Label";
 import FuturisticBackground from "@/components/customer/FuturisticBackground";
 import { UserCircleIcon } from "@/icons";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function CustomerProfile() {
   const [profile, setProfile] = useState<any>(null);
@@ -23,6 +25,8 @@ export default function CustomerProfile() {
   const [error, setError] = useState("");
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const { logout } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     fetchProfile();
@@ -48,6 +52,11 @@ export default function CustomerProfile() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.replace("/customer");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -194,15 +203,27 @@ export default function CustomerProfile() {
               />
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg shadow-teal-500/30" 
-              size="sm" 
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white shadow-lg shadow-teal-500/30"
+              size="sm"
               disabled={saving}
             >
               {saving ? "Saving..." : "Update Profile"}
             </Button>
           </form>
+        </div>
+
+        <div className="mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full border-red-300 text-red-600 hover:bg-red-50 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-500/10"
+            onClick={handleLogout}
+          >
+            Log out
+          </Button>
         </div>
       </div>
     </div>

@@ -1,11 +1,11 @@
 "use client";
 
-import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import React from "react";
 import FuturisticBackground from "@/components/customer/FuturisticBackground";
 import { useTheme } from "@/context/ThemeContext";
 import CustomerNotificationDropdown from "@/components/customer/CustomerNotificationDropdown";
+import { usePathname } from "next/navigation";
 
 export default function CustomerLayout({
   children,
@@ -14,6 +14,17 @@ export default function CustomerLayout({
 }) {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
+
+  const pathname = usePathname();
+  const isPublicCustomerRoute =
+    pathname === "/customer" ||
+    pathname === "/customer/login" ||
+    pathname === "/customer/register";
+
+  // Do not enforce auth or wrap in customer shell for landing/auth pages
+  if (isPublicCustomerRoute) {
+    return <>{children}</>;
+  }
 
   return (
     <ProtectedRoute allowedRoles={["customer"]}>
@@ -26,7 +37,7 @@ export default function CustomerLayout({
           <header className={`backdrop-blur-xl ${isDark ? 'bg-white/10' : 'bg-white/80'} ${isDark ? 'border-white/20' : 'border-gray-200/50'} border-b sticky top-0 z-50 shadow-lg`}>
             <div className="px-4 py-3 flex items-center justify-between">
               <h1 className={`text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                PowerBB
+                BB Charge
               </h1>
               <div className="flex items-center gap-3">
                 {/* Theme Toggle */}

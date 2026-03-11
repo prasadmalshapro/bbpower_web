@@ -3,7 +3,7 @@ import React from "react";
 import DashboardOverview from "@/components/admin/DashboardOverview";
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard | PowerBB",
+  title: "Admin Dashboard | BB Charge",
   description: "Power Bank Rental Management System - Admin Dashboard",
 };
 

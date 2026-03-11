@@ -30,6 +30,50 @@ export default function RentalHistory() {
     }
   };
 
+  // API may send server-local time with "Z"; treat as local for display
+  const formatRentalDateTime = (isoString: string | null | undefined): string => {
+    if (!isoString) return "—";
+    const match = String(isoString).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+    if (match) {
+      const [, y, mo, day, h, m] = match;
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const hour = parseInt(h, 10);
+      const h12 = hour % 12 || 12;
+      const ampm = hour < 12 ? "AM" : "PM";
+      return `${parseInt(day, 10)} ${months[parseInt(mo, 10) - 1]} ${y}, ${h12}:${m} ${ampm}`;
+    }
+    return new Date(isoString).toLocaleString();
+  };
+
+  const parseRentalTimeAsLocal = (isoString: string | null | undefined): Date | null => {
+    if (!isoString) return null;
+    const match = String(isoString).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+    if (match) {
+      const [, y, mo, d, h, min, s] = match;
+      return new Date(
+        parseInt(y!, 10),
+        parseInt(mo!, 10) - 1,
+        parseInt(d!, 10),
+        parseInt(h!, 10),
+        parseInt(min!, 10),
+        parseInt(s!, 10) || 0,
+        0
+      );
+    }
+    return new Date(isoString);
+  };
+
+  const getDurationMinutes = (rental: { start_time?: string; end_time?: string; duration_minutes?: number }): number | null => {
+    const start = parseRentalTimeAsLocal(rental.start_time);
+    const end = parseRentalTimeAsLocal(rental.end_time);
+    if (start && end) {
+      const ms = end.getTime() - start.getTime();
+      return Math.max(0, Math.round(ms / (1000 * 60)));
+    }
+    if (rental.duration_minutes != null && rental.duration_minutes >= 0) return rental.duration_minutes;
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen relative overflow-hidden">
@@ -93,10 +137,10 @@ export default function RentalHistory() {
                       <BoxIconLine className={`w-4 h-4 ${isDark ? 'text-teal-300' : 'text-teal-600'}`} />
                       <span className={isDark ? "text-gray-300" : "text-gray-600"}>{rental.store_name}</span>
                     </div>
-                    {rental.duration_minutes && (
+                    {getDurationMinutes(rental) != null && (
                       <div className="flex items-center gap-2">
                         <TimeIcon className={`w-4 h-4 ${isDark ? 'text-teal-300' : 'text-teal-600'}`} />
-                        <span className={isDark ? "text-gray-300" : "text-gray-600"}>Duration: <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{rental.duration_minutes} minutes</span></span>
+                        <span className={isDark ? "text-gray-300" : "text-gray-600"}>Duration: <span className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{getDurationMinutes(rental)} minutes</span></span>
                       </div>
                     )}
                     {rental.payment_amount && (
@@ -105,7 +149,8 @@ export default function RentalHistory() {
                       </p>
                     )}
                     <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {new Date(rental.start_time).toLocaleString()}
+                      {formatRentalDateTime(rental.start_time)}
+                      {rental.end_time && ` – ${formatRentalDateTime(rental.end_time)}`}
                     </p>
                   </div>
                 </div>

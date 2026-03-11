@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { qrCodesApi, rentalsApi } from "@/lib/api-client";
+import { qrCodesApi, rentalsApi, rateCardsApi } from "@/lib/api-client";
 import Button from "@/components/ui/button/Button";
 import QRScanner from "@/components/customer/QRScanner";
 import FuturisticBackground from "@/components/customer/FuturisticBackground";
@@ -14,6 +14,8 @@ export default function QRScannerPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
+  const [rateCard, setRateCard] = useState<any | null>(null);
+  const [rateCardError, setRateCardError] = useState("");
   const [showCameraScanner, setShowCameraScanner] = useState(false);
   const router = useRouter();
   const { theme } = useTheme();
@@ -34,6 +36,8 @@ export default function QRScannerPage() {
     setError("");
     setLoading(true);
     setDeviceInfo(null);
+    setRateCard(null);
+    setRateCardError("");
 
     try {
       const response = await qrCodesApi.scan(code.trim());
@@ -46,7 +50,22 @@ export default function QRScannerPage() {
 
       const data = response.data as { data?: any };
       if (data.data) {
-        setDeviceInfo(data.data);
+        const info = data.data;
+        setDeviceInfo(info);
+
+        const storeId = info.device?.store?.id as number | undefined;
+        try {
+          const rateResponse = await rateCardsApi.getActive(storeId);
+          if (rateResponse.data) {
+            const rateData = rateResponse.data as { data?: any };
+            setRateCard(rateData.data || null);
+          }
+        } catch (rateErr: any) {
+          setRateCard(null);
+          if (rateErr?.message) {
+            setRateCardError("Failed to load rate card: " + rateErr.message);
+          }
+        }
       }
     } catch (err: any) {
       setError("Failed to scan QR code: " + err.message);
@@ -112,7 +131,7 @@ export default function QRScannerPage() {
             </h1>
           </div>
           <p className={`text-sm ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-            Scan to rent a power bank (no payment required)
+            Scan to rent a power bank
           </p>
         </div>
 
@@ -167,7 +186,7 @@ export default function QRScannerPage() {
               size="sm"
               variant="outline"
             >
-              📷 Use Camera
+              Use Camera
             </Button>
             <Button
               onClick={handleScan}
@@ -175,7 +194,7 @@ export default function QRScannerPage() {
               size="sm"
               disabled={loading}
             >
-              {loading ? "Scanning..." : "Scan QR Code"}
+              {loading ? "Find by Code" : "Find by Code"}
             </Button>
           </div>
         </div>
@@ -234,12 +253,97 @@ export default function QRScannerPage() {
               </div>
             </div>
 
-            <p
-              className={`text-sm mb-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
-            >
-              Click below to start your rental. The power bank will be ejected from
-              the device (payment is temporarily disabled).
-            </p>
+            {rateCard && (
+              <div
+                className={`mb-5 overflow-hidden rounded-2xl border shadow-lg ${
+                  isDark
+                    ? "border-teal-400/30 bg-gradient-to-br from-teal-500/20 via-cyan-500/10 to-transparent"
+                    : "border-teal-200/80 bg-gradient-to-br from-teal-50 via-cyan-50/50 to-white"
+                }`}
+              >
+                <div
+                  className={`px-4 py-3 ${
+                    isDark ? "bg-teal-500/20" : "bg-teal-100/80"
+                  }`}
+                >
+                  <h3
+                    className={`text-sm font-semibold uppercase tracking-wide ${
+                      isDark ? "text-teal-200" : "text-teal-800"
+                    }`}
+                  >
+                    Rate card for this location
+                  </h3>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div
+                    className={`flex items-center justify-between rounded-xl px-4 py-3 ${
+                      isDark ? "bg-white/5" : "bg-white/80"
+                    } ${isDark ? "text-gray-100" : "text-gray-800"}`}
+                  >
+                    <span className="text-sm">
+                      First {rateCard.first_duration_minutes} min
+                    </span>
+                    <span
+                      className={`font-bold text-lg ${
+                        isDark ? "text-teal-300" : "text-teal-600"
+                      }`}
+                    >
+                      LKR {Number(rateCard.first_amount).toFixed(2)}
+                    </span>
+                  </div>
+                  <div
+                    className={`flex items-center justify-between rounded-xl px-4 py-3 ${
+                      isDark ? "bg-white/5" : "bg-white/80"
+                    } ${isDark ? "text-gray-100" : "text-gray-800"}`}
+                  >
+                    <span className="text-sm">
+                      Every {rateCard.subsequent_duration_minutes} min after
+                    </span>
+                    <span
+                      className={`font-bold text-lg ${
+                        isDark ? "text-teal-300" : "text-teal-600"
+                      }`}
+                    >
+                      LKR {Number(rateCard.subsequent_amount).toFixed(2)}
+                    </span>
+                  </div>
+                  <div
+                    className={`flex items-center justify-between rounded-xl px-4 py-3 ${
+                      isDark ? "bg-amber-500/15 border border-amber-400/30" : "bg-amber-50 border border-amber-200/80"
+                    } ${isDark ? "text-amber-100" : "text-amber-900"}`}
+                  >
+                    <span className="text-sm font-medium">Deposit</span>
+                    <span
+                      className={`font-bold text-lg ${
+                        isDark ? "text-amber-200" : "text-amber-700"
+                      }`}
+                    >
+                      LKR {Number(rateCard.refundable_deposit).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!rateCard && !rateCardError && (
+              <p
+                className={`text-sm mb-4 ${
+                  isDark ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
+                Click below to start your rental. The power bank will be ejected from
+                the device.
+              </p>
+            )}
+            {rateCardError && (
+              <p
+                className={`text-sm mb-4 ${
+                  isDark ? "text-red-300" : "text-red-600"
+                }`}
+              >
+                {rateCardError}
+              </p>
+            )}
 
             <Button
               onClick={handleStartRental}

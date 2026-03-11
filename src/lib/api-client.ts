@@ -101,13 +101,17 @@ export const apiClient = new ApiClient(API_BASE_URL);
 // Auth API methods
 export const authApi = {
   register: (userData: {
-    username: string;
+    first_name: string;
+    last_name: string;
     email: string;
     mobile: string;
     password: string;
     address?: string;
     role?: string;
   }) => apiClient.post('/auth/register', userData),
+
+  verifyRegistrationOtp: (data: { user_id: number; code: string }) =>
+    apiClient.post('/auth/register/verify-otp', data),
 
   login: (credentials: { email: string; password: string }) =>
     apiClient.post('/auth/login', credentials),
@@ -221,8 +225,16 @@ export const qrCodesApi = {
 
 // Rate Cards API methods
 export const rateCardsApi = {
-  getActive: () => apiClient.get('/rate-cards/active'),
-  getAll: () => apiClient.get('/rate-cards'),
+  getActive: (storeId?: number) =>
+    apiClient.get(storeId != null ? `/rate-cards/active?store_id=${storeId}` : '/rate-cards/active'),
+  getAll: (params?: { store_id?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.store_id != null) {
+      queryParams.set('store_id', String(params.store_id));
+    }
+    const query = queryParams.toString();
+    return apiClient.get(`/rate-cards${query ? `?${query}` : ''}`);
+  },
   create: (rateCardData: {
     first_duration_minutes: number;
     first_amount: number;

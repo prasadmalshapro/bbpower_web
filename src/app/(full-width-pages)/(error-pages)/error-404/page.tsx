@@ -5,9 +5,9 @@ import Link from "next/link";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Error 404 | PowerBB - Power Bank Rental System",
+  title: "Error 404 | BB Charge - Power Bank Rental System",
   description:
-    "Page not found - PowerBB Power Bank Rental System",
+    "Page not found - BB Charge Power Bank Rental System",
 };
 
 export default function Error404() {
@@ -47,7 +47,7 @@ export default function Error404() {
       </div>
       {/* <!-- Footer --> */}
       <p className="absolute text-sm text-center text-gray-500 -translate-x-1/2 bottom-6 left-1/2 dark:text-gray-400">
-        &copy; {new Date().getFullYear()} - PowerBB
+        &copy; {new Date().getFullYear()} - BB Charge
       </p>
     </div>
   );

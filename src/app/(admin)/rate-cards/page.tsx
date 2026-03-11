@@ -1,15 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { rateCardsApi } from "@/lib/api-client";
+import { rateCardsApi, storesApi } from "@/lib/api-client";
 import Button from "@/components/ui/button/Button";
 import { Modal } from "@/components/ui/modal";
 import { useModal } from "@/hooks/useModal";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
+import Select from "@/components/form/Select";
 
 interface RateCard {
   id: number;
+  store_id?: number | null;
   first_duration_minutes: number;
   first_amount: number;
   subsequent_duration_minutes: number;
@@ -21,6 +23,7 @@ interface RateCard {
 export default function RateCardsPage() {
   const [rateCards, setRateCards] = useState<RateCard[]>([]);
   const [activeRateCard, setActiveRateCard] = useState<RateCard | null>(null);
+  const [stores, setStores] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modalError, setModalError] = useState("");
@@ -28,6 +31,7 @@ export default function RateCardsPage() {
   const { isOpen, openModal, closeModal } = useModal();
   const [editingRateCard, setEditingRateCard] = useState<RateCard | null>(null);
   const [formData, setFormData] = useState({
+    store_id: "",
     first_duration_minutes: "",
     first_amount: "",
     subsequent_duration_minutes: "",
@@ -37,9 +41,22 @@ export default function RateCardsPage() {
   });
 
   useEffect(() => {
+    fetchStores();
     fetchRateCards();
     fetchActiveRateCard();
   }, []);
+
+  const fetchStores = async () => {
+    try {
+      const response = await storesApi.getAll();
+      if (response.data) {
+        const apiResponse = response.data as { data?: { id: number; name: string }[] };
+        setStores(apiResponse.data || []);
+      }
+    } catch {
+      // ignore store-loading errors for now
+    }
+  };
 
   const fetchRateCards = async () => {
     try {
@@ -74,6 +91,7 @@ export default function RateCardsPage() {
   const handleCreate = () => {
     setEditingRateCard(null);
     setFormData({
+      store_id: "",
       first_duration_minutes: "",
       first_amount: "",
       subsequent_duration_minutes: "",
@@ -88,6 +106,7 @@ export default function RateCardsPage() {
   const handleEdit = (rateCard: RateCard) => {
     setEditingRateCard(rateCard);
     setFormData({
+      store_id: rateCard.store_id != null ? String(rateCard.store_id) : "",
       first_duration_minutes: rateCard.first_duration_minutes.toString(),
       first_amount: rateCard.first_amount.toString(),
       subsequent_duration_minutes: rateCard.subsequent_duration_minutes.toString(),
@@ -106,6 +125,7 @@ export default function RateCardsPage() {
 
     try {
       const rateCardData = {
+        store_id: formData.store_id ? parseInt(formData.store_id, 10) : undefined,
         first_duration_minutes: parseInt(formData.first_duration_minutes),
         first_amount: parseFloat(formData.first_amount),
         subsequent_duration_minutes: parseInt(formData.subsequent_duration_minutes),
@@ -197,6 +217,9 @@ export default function RateCardsPage() {
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
+                  Store
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
                   First Duration
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
@@ -229,6 +252,11 @@ export default function RateCardsPage() {
               ) : (
                 rateCards.map((rateCard) => (
                   <tr key={rateCard.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white/90">
+                      {rateCard.store_id
+                        ? stores.find((s) => s.id === rateCard.store_id)?.name || `Store #${rateCard.store_id}`
+                        : "All stores"}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white/90">
                       {rateCard.first_duration_minutes} min
                     </td>
@@ -288,6 +316,18 @@ export default function RateCardsPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <Label>Store (optional)</Label>
+              <Select
+                options={[
+                  { value: "", label: "All stores (default rate card)" },
+                  ...stores.map((s) => ({ value: String(s.id), label: s.name })),
+                ]}
+                value={formData.store_id}
+                onChange={(value) => setFormData({ ...formData, store_id: value })}
+                placeholder="Select a store"
+              />
+            </div>
             <div>
               <Label>
                 First Duration (minutes) <span className="text-error-500">*</span>

@@ -6,8 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Sign In | PowerBB - Power Bank Rental System",
-  description: "Sign in to access the PowerBB Dashboard",
+  title: "Sign In | BB Charge - Power Bank Rental System",
+  description: "Sign in to access the BB Charge Dashboard",
 };
 
 export default function SignIn() {

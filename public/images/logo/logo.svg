@@ -9,6 +9,6 @@
   <rect x="6" y="16" width="12" height="8" rx="1" fill="#FFFFFF"/>
   <rect x="20" y="18" width="2" height="4" rx="1" fill="#3B82F6"/>
   
-  <!-- PowerBB Text -->
-  <text x="28" y="28" class="logo-text" font-size="18" fill="#1F2937">PowerBB</text>
+  <!-- BB Charge Text -->
+  <text x="28" y="28" class="logo-text" font-size="18" fill="#1F2937">BB Charge</text>
 </svg>
