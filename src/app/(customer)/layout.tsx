@@ -6,6 +6,7 @@ import FuturisticBackground from "@/components/customer/FuturisticBackground";
 import { useTheme } from "@/context/ThemeContext";
 import CustomerNotificationDropdown from "@/components/customer/CustomerNotificationDropdown";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 export default function CustomerLayout({
   children,
@@ -36,9 +37,10 @@ export default function CustomerLayout({
           {/* Glassmorphism header for mobile */}
           <header className={`backdrop-blur-xl ${isDark ? 'bg-white/10' : 'bg-white/80'} ${isDark ? 'border-white/20' : 'border-gray-200/50'} border-b sticky top-0 z-50 shadow-lg`}>
             <div className="px-4 py-3 flex items-center justify-between">
-              <h1 className={`text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {/* <h1 className={`text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 BB Charge
-              </h1>
+              </h1> */}
+              <img src="/images/logo/bblogo.jpg" alt="BB Charge" width={100} height={100} />
               <div className="flex items-center gap-3">
                 {/* Theme Toggle */}
                 <button

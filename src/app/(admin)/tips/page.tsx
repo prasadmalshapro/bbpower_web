@@ -327,7 +327,7 @@ export default function TipsPage() {
               <Label>Display order</Label>
               <Input
                 type="number"
-                min={0}
+                min="0"
                 value={formData.display_order}
                 onChange={(e) => setFormData({ ...formData, display_order: e.target.value })}
               />

@@ -173,6 +173,8 @@ export const devicesApi = {
   eject: (id: number, slot: number) => apiClient.post(`/devices/${id}/eject`, { slot }),
   /** Eject all power banks. Command 81 */
   ejectAll: (id: number) => apiClient.post(`/devices/${id}/eject-all`),
+  /** Request inventory (code 64), wait 2s, return terminals (L, B, D) for device manage page */
+  requestInventory: (id: number) => apiClient.post(`/devices/${id}/request-inventory`),
 };
 
 // Users API methods
@@ -380,6 +382,7 @@ export const tipsApi = {
 // Special Offers API methods (public getActive for app; admin CRUD)
 export const specialOffersApi = {
   getActive: () => apiClient.get('/special-offers/active'),
+  getActiveList: () => apiClient.get('/special-offers/active-list'),
   getAll: () => apiClient.get('/special-offers'),
   create: (data: {
     label?: string;

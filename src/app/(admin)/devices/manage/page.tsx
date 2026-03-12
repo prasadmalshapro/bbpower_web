@@ -61,6 +61,11 @@ function DeviceManageContent() {
   const [ejectingAll, setEjectingAll] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  type Terminal = { L: string; B: string; D: string };
+  const [inventory, setInventory] = useState<{ terminals: Terminal[] } | null>(null);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [inventoryError, setInventoryError] = useState("");
+
   useEffect(() => {
     const resolved = idFromUrl ?? getDeviceIdFromStorage();
     if (resolved != null) {
@@ -133,6 +138,34 @@ function DeviceManageContent() {
       setActionMessage({ type: "error", text: "Failed to send eject all command." });
     } finally {
       setEjectingAll(false);
+    }
+  };
+
+  const handleRefreshInventory = async () => {
+    if (!id) return;
+    setInventoryError("");
+    setInventoryLoading(true);
+    try {
+      const response = await devicesApi.requestInventory(id);
+      if (response.error) {
+        setInventoryError(response.error);
+        setInventory(null);
+      } else {
+        const res = response.data as { data?: { terminals?: Terminal[] }; message?: string } | null;
+        const data = res?.data;
+        if (data?.terminals && Array.isArray(data.terminals)) {
+          setInventory({ terminals: data.terminals });
+          setInventoryError("");
+        } else {
+          setInventory(null);
+          setInventoryError(res?.message ?? "No fresh inventory received. Try again.");
+        }
+      }
+    } catch {
+      setInventoryError("Failed to refresh inventory");
+      setInventory(null);
+    } finally {
+      setInventoryLoading(false);
     }
   };
 
@@ -272,17 +305,30 @@ function DeviceManageContent() {
             Power banks
           </h2>
           {numSlots > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleEjectAll}
-              disabled={ejectingAll}
-            >
-              {ejectingAll ? "Sending…" : "Eject all"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRefreshInventory}
+                disabled={inventoryLoading}
+              >
+                {inventoryLoading ? "Refreshing…" : "Refresh inventory"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleEjectAll}
+                disabled={ejectingAll}
+              >
+                {ejectingAll ? "Sending…" : "Eject all"}
+              </Button>
+            </div>
           )}
         </div>
         <div className="p-6">
+          {inventoryError && (
+            <p className="text-sm text-error-600 dark:text-error-400 mb-4">{inventoryError}</p>
+          )}
           {numSlots === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="rounded-full bg-gray-100 dark:bg-gray-800 p-4 mb-3">
@@ -297,6 +343,9 @@ function DeviceManageContent() {
             <div className="grid grid-cols-2 gap-4">
               {slots.map((slot) => {
                 const isEjecting = ejectingSlot === slot;
+                const terminal = inventory?.terminals?.find((t) => String(t.L) === String(slot));
+                const powerBankCode = terminal?.B ?? null;
+                const batteryLevel = terminal?.D ?? null;
                 return (
                   <div
                     key={slot}
@@ -314,10 +363,18 @@ function DeviceManageContent() {
                         </div>
                       </div>
                       <p className="text-lg font-semibold text-gray-900 dark:text-white/90 mb-1">
-                        Power bank {slot}
+                        {powerBankCode ? (
+                          <span className="font-mono text-base">{powerBankCode}</span>
+                        ) : (
+                          "—"
+                        )}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 flex-1">
-                        Eject this unit from the device
+                        {batteryLevel != null && batteryLevel !== "" ? (
+                          <span className="font-medium text-brand-600 dark:text-brand-400">Battery: {batteryLevel}%</span>
+                        ) : (
+                          "No data — tap Refresh inventory"
+                        )}
                       </p>
                       <Button
                         size="sm"

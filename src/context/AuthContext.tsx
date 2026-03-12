@@ -93,7 +93,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     address?: string;
   }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await authApi.register(userData);
+      // Legacy register wrapper: map username into first/last name
+      const response = await authApi.register({
+        first_name: userData.username,
+        last_name: userData.username,
+        email: userData.email,
+        mobile: userData.mobile,
+        password: userData.password,
+        address: userData.address,
+      });
 
       if (response.error) {
         return { success: false, error: response.error };

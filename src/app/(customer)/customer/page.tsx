@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -8,7 +8,7 @@ import FuturisticBackground from "@/components/customer/FuturisticBackground";
 import Button from "@/components/ui/button/Button";
 import { useTheme } from "@/context/ThemeContext";
 
-export default function CustomerLandingPage() {
+function CustomerLandingContent() {
   const searchParams = useSearchParams();
   const deviceId = searchParams.get("q");
   const { theme } = useTheme();
@@ -138,6 +138,19 @@ export default function CustomerLandingPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function CustomerLandingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen pb-20 relative overflow-hidden flex items-center justify-center">
+        <FuturisticBackground />
+        <div className="relative z-10 text-sm text-gray-500 dark:text-gray-400">Loading...</div>
+      </div>
+    }>
+      <CustomerLandingContent />
+    </Suspense>
   );
 }
 

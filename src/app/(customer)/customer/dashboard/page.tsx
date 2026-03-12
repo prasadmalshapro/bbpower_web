@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { rentalsApi, walletApi, storesWithDevicesApi } from "@/lib/api-client";
+import { rentalsApi, walletApi, storesWithDevicesApi, tipsApi, specialOffersApi } from "@/lib/api-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -24,6 +24,11 @@ export default function CustomerDashboard() {
   const [wallet, setWallet] = useState<any>(null);
   const [storesCount, setStoresCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [tips, setTips] = useState<any[]>([]);
+  const [tipIndex, setTipIndex] = useState(0);
+  const [specialOffers, setSpecialOffers] = useState<any[]>([]);
+  const [specialOfferIndex, setSpecialOfferIndex] = useState(0);
+  const [tipsError, setTipsError] = useState<string>("");
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -31,10 +36,12 @@ export default function CustomerDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [rentalRes, walletRes, storesRes] = await Promise.all([
+        const [rentalRes, walletRes, storesRes, tipsRes, offersRes] = await Promise.all([
           rentalsApi.getActiveRental(),
           walletApi.getWallet(),
           storesWithDevicesApi.getStoresWithDevices(),
+          tipsApi.getTips({ limit: 10 }),
+          specialOffersApi.getActiveList(),
         ]);
 
         if (rentalRes.data) {
@@ -51,8 +58,25 @@ export default function CustomerDashboard() {
           const storesData = storesRes.data as { data?: any[] };
           setStoresCount(storesData.data?.length || 0);
         }
+
+        if (tipsRes?.data) {
+          const tipsData = tipsRes.data as { data?: any[] };
+          const list = tipsData.data || [];
+          setTips(list);
+          setTipIndex(0);
+          setTipsError(list.length === 0 ? "No battery tips available right now." : "");
+        }
+
+        if (offersRes?.data) {
+          const offersData = offersRes.data as { data?: any[] };
+          const allOffers = offersData.data || [];
+          const activeOffers = allOffers.filter((o: any) => o && o.is_active !== false);
+          setSpecialOffers(activeOffers);
+          setSpecialOfferIndex(0);
+        }
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
+        setTipsError("Unable to load battery tips.");
       } finally {
         setLoading(false);
       }
@@ -60,6 +84,56 @@ export default function CustomerDashboard() {
 
     fetchData();
   }, []);
+
+  const hasTips = tips && tips.length > 0;
+  const hasOffers = specialOffers && specialOffers.length > 0;
+
+  const handleNextTip = () => {
+    if (!hasTips) return;
+    setTipIndex((prev) => (prev + 1) % tips.length);
+  };
+
+  const handlePrevTip = () => {
+    if (!hasTips) return;
+    setTipIndex((prev) => (prev - 1 + tips.length) % tips.length);
+  };
+
+  let touchStartX: number | null = null;
+  let offerTouchStartX: number | null = null;
+
+  const handleTipTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    touchStartX = e.touches[0]?.clientX ?? null;
+  };
+
+  const handleTipTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    if (touchStartX == null) return;
+    const endX = e.changedTouches[0]?.clientX ?? touchStartX;
+    const deltaX = endX - touchStartX;
+    const threshold = 40;
+    if (deltaX > threshold) {
+      handlePrevTip();
+    } else if (deltaX < -threshold) {
+      handleNextTip();
+    }
+    touchStartX = null;
+  };
+
+  const handleOfferTouchStart: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    offerTouchStartX = e.touches[0]?.clientX ?? null;
+  };
+
+  const handleOfferTouchEnd: React.TouchEventHandler<HTMLDivElement> = (e) => {
+    if (offerTouchStartX == null || !hasOffers) return;
+    const endX = e.changedTouches[0]?.clientX ?? offerTouchStartX;
+    const deltaX = endX - offerTouchStartX;
+    const threshold = 40;
+    if (deltaX > threshold) {
+      setSpecialOfferIndex((prev) => (prev - 1 + specialOffers.length) % specialOffers.length);
+    } else if (deltaX < -threshold) {
+      setSpecialOfferIndex((prev) => (prev + 1) % specialOffers.length);
+    }
+    offerTouchStartX = null;
+  };
 
   if (loading) {
     return (
@@ -204,6 +278,204 @@ export default function CustomerDashboard() {
             </div>
           </Link>
         </div>
+
+        {/* Battery Tips Widget */}
+        <div
+          className={`mb-6 backdrop-blur-xl ${
+            isDark ? "bg-white/5 hover:bg-white/10" : "bg-white/60 hover:bg-white/80"
+          } rounded-2xl p-6 border ${
+            isDark ? "border-white/10" : "border-gray-200/50"
+          } shadow-2xl transition-all duration-300 relative overflow-hidden`}
+        >
+          <div
+            className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${
+              isDark ? "from-emerald-500/20" : "from-emerald-400/30"
+            } to-transparent rounded-full blur-2xl`}
+          />
+          <div
+            className="relative z-10"
+            onTouchStart={handleTipTouchStart}
+            onTouchEnd={handleTipTouchEnd}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`p-3 bg-gradient-to-br ${
+                    isDark
+                      ? "from-emerald-500/20 to-teal-500/20"
+                      : "from-emerald-400/30 to-teal-400/30"
+                  } rounded-xl backdrop-blur-sm border ${
+                    isDark ? "border-white/10" : "border-gray-300/50"
+                  }`}
+                >
+                  <BoltIcon
+                    className={`w-6 h-6 ${
+                      isDark ? "text-emerald-300" : "text-emerald-600"
+                    }`}
+                  />
+                </div>
+                <div>
+                  <h2
+                    className={`font-semibold text-lg ${
+                      isDark ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    Battery tips
+                  </h2>
+                  <p
+                    className={`text-xs ${
+                      isDark ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    Swipe to learn how to get the most from your power bank
+                  </p>
+                </div>
+              </div>
+              {/* Swipe only for tips; no explicit prev/next arrows */}
+            </div>
+            <div className="space-y-2">
+              {hasTips ? (
+                <>
+                  <p
+                    className={`text-sm font-semibold ${
+                      isDark ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    {tips[tipIndex]?.title}
+                  </p>
+                  <p
+                    className={`text-sm leading-relaxed ${
+                      isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
+                    {tips[tipIndex]?.description}
+                  </p>
+                  <div className="flex items-center justify-between pt-3">
+                    <div className="flex gap-1">
+                      {tips.map((_, idx) => (
+                        <span
+                          key={idx}
+                          className={`h-1.5 w-4 rounded-full transition-all ${
+                            idx === tipIndex
+                              ? isDark
+                                ? "bg-emerald-400 w-6"
+                                : "bg-emerald-500 w-6"
+                              : isDark
+                                ? "bg-white/15"
+                                : "bg-gray-300/60"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span
+                      className={`text-xs ${
+                        isDark ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    >
+                      Tip {tipIndex + 1} of {tips.length}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <p
+                  className={`text-sm ${
+                    isDark ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
+                  {tipsError || "Battery tips will appear here soon."}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Special Offers Widget (swipeable) */}
+        {hasOffers && (
+          <div
+            className={`mb-6 backdrop-blur-xl ${
+              isDark ? "bg-white/5 hover:bg-white/10" : "bg-white/60 hover:bg-white/80"
+            } rounded-2xl p-6 border ${
+              isDark ? "border-white/10" : "border-gray-200/50"
+            } shadow-2xl transition-all duration-300 relative overflow-hidden`}
+          >
+            <div
+              className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${
+                isDark ? "from-fuchsia-500/20" : "from-fuchsia-400/30"
+              } to-transparent rounded-full blur-2xl`}
+            />
+            <div
+              className="relative z-10 space-y-3"
+              onTouchStart={handleOfferTouchStart}
+              onTouchEnd={handleOfferTouchEnd}
+            >
+              {hasOffers && (
+                <div className="flex items-center justify-between mb-1">
+                  <span
+                    className={`text-xs font-medium ${
+                      isDark ? "text-fuchsia-200" : "text-fuchsia-700"
+                    }`}
+                  >
+                    Swipe to see more offers
+                  </span>
+                  <div className="flex gap-1">
+                    {specialOffers.map((_, idx) => (
+                      <span
+                        key={idx}
+                        className={`h-1.5 w-4 rounded-full transition-all ${
+                          idx === specialOfferIndex
+                            ? isDark
+                              ? "bg-fuchsia-400 w-6"
+                              : "bg-fuchsia-500 w-6"
+                            : isDark
+                              ? "bg-white/15"
+                              : "bg-fuchsia-100"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {hasOffers && (
+                <>
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                      isDark
+                        ? "bg-fuchsia-500/15 text-fuchsia-200 border border-fuchsia-500/40"
+                        : "bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200"
+                    }`}
+                  >
+                    {specialOffers[specialOfferIndex]?.label || "Special offer"}
+                  </span>
+                  <h2
+                    className={`text-lg font-semibold ${
+                      isDark ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    {specialOffers[specialOfferIndex]?.title}
+                  </h2>
+                  {specialOffers[specialOfferIndex]?.subtitle && (
+                    <p
+                      className={`text-sm ${
+                        isDark ? "text-gray-300" : "text-gray-600"
+                      }`}
+                    >
+                      {specialOffers[specialOfferIndex]?.subtitle}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => router.push("/customer/stores")}
+                    className="mt-2 inline-flex items-center justify-center px-4 py-2.5 rounded-md text-sm font-medium bg-gradient-to-r bg-gradient-to-r from-blue-500 to-fuchsia-700 text-white shadow-lg shadow-fuchsia-500/30 hover:from-fuchsia-600 hover:to-pink-600 transition-all"
+                  >
+                    Explore nearby devices
+                    <ArrowRightIcon className="w-4 h-4 ml-1" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Quick Links - Glassmorphism */}
         <div className={`backdrop-blur-xl ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-white/60 hover:bg-white/80'} rounded-2xl p-6 border ${isDark ? 'border-white/10' : 'border-gray-200/50'} shadow-2xl transition-all duration-300 relative overflow-hidden`}>

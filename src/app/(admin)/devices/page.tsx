@@ -407,7 +407,7 @@ export default function DevicesPage() {
             </Label>
             <Input
               type="number"
-              min={0}
+              min="0"
               value={formData.number_of_power_banks}
               onChange={(e) => setFormData({ ...formData, number_of_power_banks: e.target.value })}
               placeholder="0"

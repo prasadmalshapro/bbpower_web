@@ -1,9 +1,10 @@
 "use client";
 
+import React from "react";
 import { FEATURES } from "@/constants/landing";
 import { motion } from "framer-motion";
 
-const icons: Record<string, JSX.Element> = {
+const icons: Record<string, React.ReactNode> = {
   battery: (
     <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
