@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { qrCodesApi, rentalsApi, rateCardsApi } from "@/lib/api-client";
+import { qrCodesApi, rentalsApi, rateCardsApi, walletApi } from "@/lib/api-client";
 import Button from "@/components/ui/button/Button";
 import QRScanner from "@/components/customer/QRScanner";
 import FuturisticBackground from "@/components/customer/FuturisticBackground";
@@ -17,9 +17,29 @@ export default function QRScannerPage() {
   const [rateCard, setRateCard] = useState<any | null>(null);
   const [rateCardError, setRateCardError] = useState("");
   const [showCameraScanner, setShowCameraScanner] = useState(false);
+  const [wallet, setWallet] = useState<any | null>(null);
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === "dark";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const walletRes = await walletApi.getWallet();
+        if (cancelled || !walletRes.data) return;
+        const walletData = walletRes.data as { data?: any };
+        setWallet(walletData.data ?? null);
+      } catch {
+        // ignore wallet load failures here
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const extractDeviceCode = (input: string) => {
     const value = input.trim();
@@ -109,6 +129,16 @@ export default function QRScannerPage() {
     if (!deviceInfo || !qrCode.trim()) {
       setError("Please scan a QR code first.");
       return;
+    }
+
+    if (wallet) {
+      const minLimit = Number(wallet.min_limit ?? 0);
+      const balance = Number(wallet.balance ?? 0);
+
+      if (!Number.isNaN(minLimit) && balance < minLimit) {
+        setError("Please top up your wallet before starting a rental.");
+        return;
+      }
     }
 
     setError("");
