@@ -58,7 +58,7 @@ function CustomerLandingContent() {
               isDark ? "bg-white/5" : "bg-white/70"
             } rounded-3xl p-6 sm:p-8 border ${
               isDark ? "border-white/10" : "border-gray-200/60"
-            } shadow-2xl relative overflow-hidden`}
+            } shadow-2xl relative overflow-hidden hover-float transition-transform duration-200`}
           >
             <div
               className={`pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl ${

@@ -763,3 +763,27 @@ span.flatpickr-weekday,
 .animation-delay-4000 {
   animation-delay: 4s;
 }
+
+/* Gentle swift hover float (used on /customer landing card) */
+@keyframes bb-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.hover-float {
+  will-change: transform;
+}
+
+.hover-float {
+  animation: bb-float 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hover-float {
+    animation: none !important;
+  }
+}

@@ -47,25 +47,86 @@ export default function WalletPage() {
 
   const handleTopUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!topUpAmount || parseFloat(topUpAmount) <= 0) {
+    const amountNumber = parseFloat(topUpAmount);
+    if (!topUpAmount || isNaN(amountNumber) || amountNumber <= 0) {
       alert("Please enter a valid amount");
       return;
     }
 
     setTopUpLoading(true);
     try {
-      const response = await walletApi.topUp({
-        amount: parseFloat(topUpAmount),
-      });
-      if (response.error) {
-        alert(response.error);
-      } else {
-        setTopUpAmount("");
-        fetchWalletData();
-        alert("Wallet topped up successfully");
+      const apiBase = "http://bbchargeapi.ascendique.com/api/v1";
+
+      // Amount for payment gateway: e.g. 100 -> 10000
+      const gatewayAmount = Math.round(amountNumber * 100);
+
+      // Persist amount so we can credit wallet only after a successful return from gateway
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(
+          "BBPOWER_WALLET_TOPUP_PENDING",
+          JSON.stringify({ amount: amountNumber })
+        );
       }
+
+      const origin =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "https://dev.d1t49ghx7gqjye.amplifyapp.com";
+
+      const payload = {
+        currency: "LKR",
+        amount: gatewayAmount,
+        localId: `WALLET-TOPUP-${Date.now()}`,
+        redirectUrl: `https://dev.d1t49ghx7gqjye.amplifyapp.com/customer/wallet/topup-success`,
+        webhook: `${apiBase.replace(/\/$/, "")}/payments/webhook`,
+        customer: {
+          name: "Wallet Customer",
+          email: "wallet@example.com",
+          billingEmail: "wallet@example.com",
+          billingAddress1: "N/A",
+          billingAddress2: "",
+          billingCity: "Colombo",
+          billingCountry: "Sri Lanka",
+          billingPostCode: "00100",
+        },
+        tokenizationDetails: {
+          tokenize: true,
+          paymentType: "UNSCHEDULED",
+        },
+        paymentPortalExperience: {
+          skipCustomerForm: false,
+          skipProviderSelection: false,
+        },
+        apiVersion: "2.0",
+        appVersion: "geniebiz-connect-php",
+        signMethod: "sha1",
+      };
+
+      const res = await fetch(
+        `${apiBase.replace(/\/$/, "")}/payment-gateway-check/create`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        alert(json?.error || json?.message || "Failed to initiate payment");
+        return;
+      }
+
+      const url = json?.data?.url ?? json?.url;
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+
+      alert("Payment created but no redirect URL returned.");
     } catch (err: any) {
-      alert("Failed to top up wallet: " + err.message);
+      alert("Failed to start payment: " + err.message);
     } finally {
       setTopUpLoading(false);
     }

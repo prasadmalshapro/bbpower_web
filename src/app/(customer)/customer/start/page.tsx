@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { qrCodesApi, rentalsApi, rateCardsApi } from "@/lib/api-client";
+import { qrCodesApi, rentalsApi, rateCardsApi, walletApi } from "@/lib/api-client";
 import Button from "@/components/ui/button/Button";
 import FuturisticBackground from "@/components/customer/FuturisticBackground";
 import { BoltIcon, PlugInIcon, BoxIconLine } from "@/icons";
@@ -20,6 +20,7 @@ export default function CustomerStartRentalPage() {
   const [deviceCode, setDeviceCode] = useState<string | null>(null);
   const [deviceInfo, setDeviceInfo] = useState<any>(null);
   const [rateCard, setRateCard] = useState<any | null>(null);
+  const [wallet, setWallet] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
@@ -85,10 +86,39 @@ export default function CustomerStartRentalPage() {
     };
   }, [deviceCode]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const walletRes = await walletApi.getWallet();
+        if (cancelled || !walletRes.data) return;
+        const walletData = walletRes.data as { data?: any };
+        setWallet(walletData.data ?? null);
+      } catch {
+        // ignore wallet load failures here
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleProceedToRental = async () => {
     if (!deviceCode) {
       setError("Device not found. Please scan the QR code again.");
       return;
+    }
+
+    if (rateCard && wallet) {
+      const depositAmount = Number(rateCard.refundable_deposit ?? 0);
+      const walletBalance = Number(wallet.balance ?? 0);
+
+      if (!Number.isNaN(depositAmount) && walletBalance < depositAmount) {
+        setError("Please top up your wallet first.");
+        return;
+      }
     }
 
     setError("");
