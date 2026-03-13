@@ -104,11 +104,11 @@ export default function PaymentGatewayCheckPage() {
           </p>
         )}
 
-        {responseData && (
+        {responseData != null ? (
           <pre className="text-xs bg-gray-100 p-3 rounded overflow-auto max-h-60">
             {JSON.stringify(responseData, null, 2)}
           </pre>
-        )}
+        ) : null}
       </div>
     </div>
   );
