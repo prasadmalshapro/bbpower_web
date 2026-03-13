@@ -33,9 +33,9 @@ function CustomerLandingContent() {
       <div className="relative z-10 flex flex-col min-h-screen px-4 pt-10 pb-8 max-w-lg mx-auto">
         <header className="flex items-center justify-center mb-8">
           <div className="flex flex-col items-center gap-3">
-            <div className="relative w-40 h-10">
+            <div className="relative w-40 h-24">
               <Image
-                src="/images/logo/auth-logo.svg"
+                src="/images/logo/logo.png"
                 alt="BB Charge"
                 fill
                 className="object-contain"

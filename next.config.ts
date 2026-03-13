@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "export",
+  images: { unoptimized: true },
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,
@@ -9,9 +10,7 @@ const nextConfig: NextConfig = {
     });
     return config;
   },
-  output: 'export',
-    
-    turbopack: {
+  turbopack: {
       rules: {
         '*.svg': {
           loaders: ['@svgr/webpack'],
