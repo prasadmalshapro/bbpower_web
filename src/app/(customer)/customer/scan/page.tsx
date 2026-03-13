@@ -21,10 +21,36 @@ export default function QRScannerPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
+  const extractDeviceCode = (input: string) => {
+    const value = input.trim();
+    if (!value) return "";
+
+    // Try to parse as full URL first
+    try {
+      const url = new URL(value);
+      const qParam = url.searchParams.get("q");
+      if (qParam && qParam.trim()) {
+        return qParam.trim();
+      }
+    } catch {
+      // Not a full URL, fall back to pattern matching below
+    }
+
+    // Fallback: look for q=... in the string
+    const match = value.match(/[?&]q=([^&]+)/);
+    if (match?.[1]) {
+      return decodeURIComponent(match[1]).trim();
+    }
+
+    // Otherwise treat the scanned content itself as the device code
+    return value;
+  };
+
   const handleQRScan = async (scannedCode: string) => {
-    setQrCode(scannedCode);
+    const deviceCode = extractDeviceCode(scannedCode);
+    setQrCode(deviceCode);
     setShowCameraScanner(false);
-    await processQRCode(scannedCode);
+    await processQRCode(deviceCode);
   };
 
   const processQRCode = async (code: string) => {
