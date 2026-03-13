@@ -39,8 +39,14 @@ export default function QRScanner({
         setCameraPermission(true);
         setError("");
 
+        // Prefer a back-facing / rear camera if available
+        const backCamera =
+          devices.find((d) =>
+            /back|rear|environment/i.test(d.label || "")
+          ) || devices[0];
+
         await scanner.start(
-          devices[0].id,
+          backCamera.id,
           {
             fps: 10,
             qrbox: { width: 250, height: 250 },
