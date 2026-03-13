@@ -55,7 +55,7 @@ export default function WalletPage() {
 
     setTopUpLoading(true);
     try {
-      const apiBase = "http://bbchargeapi.ascendique.com/api/v1";
+      const apiBase = "https://bbchargeapi.ascendique.com/api/v1";
 
       // Amount for payment gateway: e.g. 100 -> 10000
       const gatewayAmount = Math.round(amountNumber * 100);
