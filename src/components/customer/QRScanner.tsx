@@ -15,6 +15,7 @@ export default function QRScanner({
   onClose,
 }: QRScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const hasScannedRef = useRef(false);
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState("");
   const [cameraPermission, setCameraPermission] = useState<boolean | null>(
@@ -53,6 +54,8 @@ export default function QRScanner({
             aspectRatio: 1.0,
           },
           (decodedText) => {
+            if (hasScannedRef.current) return;
+            hasScannedRef.current = true;
             onScanSuccess(decodedText);
             stopScanning();
           },
