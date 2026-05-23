@@ -139,9 +139,30 @@ export const storesApi = {
     latitude: number;
     longitude: number;
     provider_store_id?: string;
+    store_chain_id?: number | null;
+    status?: string;
   }) => apiClient.post('/stores', storeData),
   update: (id: number, storeData: Record<string, unknown>) => apiClient.put(`/stores/${id}`, storeData),
   delete: (id: number) => apiClient.delete(`/stores/${id}`),
+};
+
+// Store chains API methods (admin)
+export const storeChainsApi = {
+  getAll: () => apiClient.get('/store-chains'),
+  getById: (id: number) => apiClient.get(`/store-chains/${id}`),
+  create: (data: {
+    name: string;
+    head_office_address?: string | null;
+    contact_no?: string | null;
+    email?: string | null;
+  }) => apiClient.post('/store-chains', data),
+  update: (id: number, data: {
+    name: string;
+    head_office_address?: string | null;
+    contact_no?: string | null;
+    email?: string | null;
+  }) => apiClient.put(`/store-chains/${id}`, data),
+  delete: (id: number) => apiClient.delete(`/store-chains/${id}`),
 };
 
 // Devices API methods

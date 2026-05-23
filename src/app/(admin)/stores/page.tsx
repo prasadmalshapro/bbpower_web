@@ -1,13 +1,19 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { storesApi } from "@/lib/api-client";
+import Link from "next/link";
+import { storesApi, storeChainsApi } from "@/lib/api-client";
 import Button from "@/components/ui/button/Button";
 import { Modal } from "@/components/ui/modal";
 import { useModal } from "@/hooks/useModal";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import TextArea from "@/components/form/input/TextArea";
+
+interface StoreChain {
+  id: number;
+  name: string;
+}
 
 interface Store {
   id: number;
@@ -16,12 +22,15 @@ interface Store {
   city: string;
   latitude: number;
   longitude: number;
-  provider_store_id?: string;
+  provider_store_id?: string | null;
+  store_chain_id?: number | null;
+  chain_name?: string;
   status: string;
 }
 
 export default function StoresPage() {
   const [stores, setStores] = useState<Store[]>([]);
+  const [chains, setChains] = useState<StoreChain[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modalError, setModalError] = useState("");
@@ -35,11 +44,13 @@ export default function StoresPage() {
     latitude: "",
     longitude: "",
     provider_store_id: "",
+    store_chain_id: "" as string,
     status: "active",
   });
 
   useEffect(() => {
     fetchStores();
+    fetchChains();
   }, []);
 
   const fetchStores = async () => {
@@ -60,6 +71,18 @@ export default function StoresPage() {
     }
   };
 
+  const fetchChains = async () => {
+    try {
+      const response = await storeChainsApi.getAll();
+      if (response.data) {
+        const apiResponse = response.data as { data?: StoreChain[] };
+        setChains(apiResponse.data || []);
+      }
+    } catch {
+      // non-blocking
+    }
+  };
+
   const handleCreate = () => {
     setEditingStore(null);
     setFormData({
@@ -69,6 +92,7 @@ export default function StoresPage() {
       latitude: "",
       longitude: "",
       provider_store_id: "",
+      store_chain_id: "",
       status: "active",
     });
     setModalError("");
@@ -84,6 +108,7 @@ export default function StoresPage() {
       latitude: store.latitude.toString(),
       longitude: store.longitude.toString(),
       provider_store_id: store.provider_store_id || "",
+      store_chain_id: store.store_chain_id != null ? String(store.store_chain_id) : "",
       status: store.status,
     });
     setModalError("");
@@ -103,6 +128,7 @@ export default function StoresPage() {
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
         provider_store_id: formData.provider_store_id || undefined,
+        store_chain_id: formData.store_chain_id ? parseInt(formData.store_chain_id, 10) : null,
         status: formData.status,
       };
 
@@ -155,9 +181,16 @@ export default function StoresPage() {
         <h1 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
           Stores Management
         </h1>
-        <Button size="sm" onClick={handleCreate}>
-          Add New Store
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link href="/store-chains">
+            <Button size="sm" variant="outline">
+              Store chains
+            </Button>
+          </Link>
+          <Button size="sm" onClick={handleCreate}>
+            Add New Store
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -173,6 +206,9 @@ export default function StoresPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
                   Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
+                  Chain
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
                   Address
@@ -191,7 +227,7 @@ export default function StoresPage() {
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
               {stores.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                     No stores found
                   </td>
                 </tr>
@@ -200,6 +236,9 @@ export default function StoresPage() {
                   <tr key={store.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white/90">
                       {store.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {store.chain_name || "—"}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {store.address}
@@ -321,6 +360,22 @@ export default function StoresPage() {
           </div>
 
           <div>
+            <Label>Chain (Optional)</Label>
+            <select
+              className="h-11 w-full appearance-none rounded-lg border border-gray-300 px-4 py-2.5 pr-11 text-sm shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-brand-800"
+              value={formData.store_chain_id}
+              onChange={(e) => setFormData({ ...formData, store_chain_id: e.target.value })}
+            >
+              <option value="">None</option>
+              {chains.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <Label>Provider Store ID (Optional)</Label>
             <Input
               value={formData.provider_store_id}
@@ -360,6 +415,7 @@ export default function StoresPage() {
           </div>
         </form>
       </Modal>
+
     </div>
   );
 }
